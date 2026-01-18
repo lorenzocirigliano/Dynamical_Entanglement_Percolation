@@ -1,5 +1,5 @@
 # Dynamical_Entanglement_Percolation
-This repositories contains the codes used to perform the numerical simulations in the paper "Dynamical entanglement percolation iwith spatially correlated disorder"
+This repositories contains the codes used to perform the numerical simulations in the paper "Dynamical entanglement percolation with spatially correlated disorder"
 
 Each subfolder contains a README file, and each program is "self-explanatory", in the sense that the user is asked for the correct parameters in input when executing the programs.
 
