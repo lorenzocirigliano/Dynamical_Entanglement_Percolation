@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Square Lattice Edge Coloring & Activation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+        }
+        
+        input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .value-display {
+            font-size: 13px;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .pattern-selector {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .pattern-btn {
+            flex: 1;
+            padding: 10px;
+            background: #e9ecef;
+            color: #333;
+            border: 2px solid transparent;
+        }
+        
+        .pattern-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+        
+        canvas {
+            border: 1px solid #ddd;
+            display: block;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-top: 5px;
+        }
+        
+        .red { color: #dc3545; }
+        .blue { color: #007bff; }
+        .active { color: #28a745; }
+        
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #28a745;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Square Lattice Edge Coloring & Activation</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="latticeSize">Lattice Size (L)</label>
+                <input type="number" id="latticeSize" min="3" max="50" value="10">
+            </div>
+            
+            <div class="control-group">
+                <label for="p1">Red Edge Activation Probability (p₁)</label>
+                <input type="range" id="p1" min="0" max="1" step="0.01" value="0.5">
+                <div class="value-display" id="p1-value">0.50</div>
+            </div>
+            
+            <div class="control-group">
+                <label for="p2">Blue Edge Activation Probability (p₂)</label>
+                <input type="range" id="p2" min="0" max="1" step="0.01" value="0.5">
+                <div class="value-display" id="p2-value">0.50</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Coloring Pattern</label>
+                <div class="pattern-selector">
+                    <button class="pattern-btn active" data-pattern="alternating">Alternating</button>
+                    <button class="pattern-btn" data-pattern="alternating-buggy">Chessboard</button>
+                    <button class="pattern-btn" data-pattern="random">Random</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <button id="generateBtn">Generate New Lattice</button>
+            </div>
+            
+            <div class="control-group">
+                <button id="activateBtn">Simulate Activation</button>
+            </div>
+            
+            <div class="control-group">
+                <button id="snapshotBtn" style="background: #6c757d;">Export to PDF</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Highlight Connected Components</label>
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="highlightComponents">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span id="componentStatus">Off</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="paletteSelect">Component Color Palette</label>
+                <select id="paletteSelect" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    <option value="vibrant" selected>Vibrant (High Contrast)</option>
+                    <optgroup label="Matplotlib Perceptually-Uniform">
+                        <option value="viridis">Viridis (Blue-Green-Yellow)</option>
+                        <option value="plasma">Plasma (Purple-Pink-Yellow)</option>
+                        <option value="inferno">Inferno (Black-Red-Yellow)</option>
+                        <option value="magma">Magma (Black-Purple-White)</option>
+                    </optgroup>
+                    <optgroup label="ColorBrewer Qualitative">
+                        <option value="set1">Set1 (Classic)</option>
+                        <option value="set2">Set2 (Medium Sat)</option>
+                        <option value="set3">Set3 (Soft)</option>
+                        <option value="paired">Paired (Light/Dark Pairs)</option>
+                        <option value="pastel1">Pastel1 (Pale)</option>
+                        <option value="pastel2">Pastel2 (Very Pale)</option>
+                        <option value="dark2">Dark2 (Dark)</option>
+                        <option value="accent">Accent (Varied Sat)</option>
+                    </optgroup>
+                    <optgroup label="Other Palettes">
+                        <option value="pastel">Pastel (Algorithmic)</option>
+                        <option value="colorblind">Colorblind-Friendly</option>
+                        <option value="rainbow">Rainbow</option>
+                        <option value="warm">Warm Colors</option>
+                        <option value="cool">Cool Colors</option>
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+        
+        <canvas id="latticeCanvas" width="800" height="800"></canvas>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">Total Edges</div>
+                <div class="stat-value" id="totalEdges">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label red">Red Edges</div>
+                <div class="stat-value red" id="redEdges">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label blue">Blue Edges</div>
+                <div class="stat-value blue" id="blueEdges">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Pattern Type</div>
+                <div class="stat-value" style="font-size: 14px;" id="patternInfo">-</div>
+            </div>
+        </div>
+        
+        <div class="stats" id="activationStats" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-label active">Active Edges</div>
+                <div class="stat-value active" id="activeEdges">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Connected Components</div>
+                <div class="stat-value" id="componentCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Largest Cluster</div>
+                <div class="stat-value" id="largestCluster">0%</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('latticeCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let L = 10; // Lattice size
+        let edges = [];
+        let pattern = 'alternating';
+        let activationState = null;
+        let connectedComponents = [];
+        let largestClusterFraction = 0;
+        let highlightComponents = false;
+        let componentPalette = 'vibrant';
+        
+        /**
+         * Generates the square lattice with colored edges
+         */
+        function generateLattice() {
+            edges = [];
+            activationState = null;
+            connectedComponents = [];
+            document.getElementById('activationStats').style.display = 'none';
+            
+            if (pattern === 'alternating') {
+                // CORRECT implementation: Independent randomization per row/column
+                generateAlternatingLattice();
+            } else if (pattern === 'alternating-buggy') {
+                // BUGGY implementation: Globally correlated
+                generateBuggyAlternatingLattice();
+            } else if (pattern === 'random') {
+                // Random 50-50 coloring
+                generateRandomLattice();
+            }
+            
+            drawLattice();
+            updateStats();
+        }
+        
+        /**
+         * CORRECT alternating lattice: each row/column independently randomized
+         */
+        function generateAlternatingLattice() {
+            // Generate row offsets (independent for each row)
+            const rowOffsets = [];
+            for (let i = 0; i < L; i++) {
+                rowOffsets.push(Math.random() < 0.5 ? 0 : 1);
+            }
+            
+            // Generate column offsets (independent for each column)
+            const colOffsets = [];
+            for (let j = 0; j < L; j++) {
+                colOffsets.push(Math.random() < 0.5 ? 0 : 1);
+            }
+            
+            // Horizontal edges (affected by row offset)
+            for (let i = 0; i < L; i++) {
+                for (let j = 0; j < L - 1; j++) {
+                    const color = (j + rowOffsets[i]) % 2 === 0 ? 'red' : 'blue';
+                    edges.push({
+                        x1: j, y1: i,
+                        x2: j + 1, y2: i,
+                        color: color,
+                        isActive: false,
+                        isHorizontal: true
+                    });
+                }
+            }
+            
+            // Vertical edges (affected by column offset)
+            for (let i = 0; i < L - 1; i++) {
+                for (let j = 0; j < L; j++) {
+                    const color = (i + colOffsets[j]) % 2 === 0 ? 'red' : 'blue';
+                    edges.push({
+                        x1: j, y1: i,
+                        x2: j, y2: i + 1,
+                        color: color,
+                        isActive: false,
+                        isHorizontal: false
+                    });
+                }
+            }
+        }
+        
+        /**
+         * BUGGY alternating lattice: globally correlated offsets
+         */
+        function generateBuggyAlternatingLattice() {
+            // Single global offset (BUGGY!)
+            const globalOffset = Math.random() < 0.5 ? 0 : 1;
+            
+            // Horizontal edges
+            for (let i = 0; i < L; i++) {
+                for (let j = 0; j < L - 1; j++) {
+                    const color = (j + globalOffset) % 2 === 0 ? 'red' : 'blue';
+                    edges.push({
+                        x1: j, y1: i,
+                        x2: j + 1, y2: i,
+                        color: color,
+                        isActive: false,
+                        isHorizontal: true
+                    });
+                }
+            }
+            
+            // Vertical edges
+            for (let i = 0; i < L - 1; i++) {
+                for (let j = 0; j < L; j++) {
+                    const color = (i + globalOffset) % 2 === 0 ? 'red' : 'blue';
+                    edges.push({
+                        x1: j, y1: i,
+                        x2: j, y2: i + 1,
+                        color: color,
+                        isActive: false,
+                        isHorizontal: false
+                    });
+                }
+            }
+        }
+        
+        /**
+         * Random 50-50 lattice coloring
+         */
+        function generateRandomLattice() {
+            // Horizontal edges
+            for (let i = 0; i < L; i++) {
+                for (let j = 0; j < L - 1; j++) {
+                    const color = Math.random() < 0.5 ? 'red' : 'blue';
+                    edges.push({
+                        x1: j, y1: i,
+                        x2: j + 1, y2: i,
+                        color: color,
+                        isActive: false,
+                        isHorizontal: true
+                    });
+                }
+            }
+            
+            // Vertical edges
+            for (let i = 0; i < L - 1; i++) {
+                for (let j = 0; j < L; j++) {
+                    const color = Math.random() < 0.5 ? 'red' : 'blue';
+                    edges.push({
+                        x1: j, y1: i,
+                        x2: j, y2: i + 1,
+                        color: color,
+                        isActive: false,
+                        isHorizontal: false
+                    });
+                }
+            }
+        }
+        
+        /**
+         * Simulates edge activation with given probabilities
+         */
+        function simulateActivation() {
+            const p1 = parseFloat(document.getElementById('p1').value);
+            const p2 = parseFloat(document.getElementById('p2').value);
+            
+            let activeCount = 0;
+            
+            edges.forEach(edge => {
+                const p = edge.color === 'red' ? p1 : p2;
+                edge.isActive = Math.random() < p;
+                if (edge.isActive) activeCount++;
+            });
+            
+            activationState = {
+                p1: p1,
+                p2: p2,
+                activeCount: activeCount
+            };
+            
+            // Find connected components
+            findConnectedComponents();
+            
+            // Update display
+            drawLattice();
+            updateActivationStats();
+        }
+        
+        /**
+         * Union-Find data structure for finding connected components
+         */
+        class UnionFind {
+            constructor(size) {
+                this.parent = Array.from({length: size}, (_, i) => i);
+                this.rank = new Array(size).fill(0);
+            }
+            
+            find(x) {
+                if (this.parent[x] !== x) {
+                    this.parent[x] = this.find(this.parent[x]); // Path compression
+                }
+                return this.parent[x];
+            }
+            
+            union(x, y) {
+                const rootX = this.find(x);
+                const rootY = this.find(y);
+                
+                if (rootX === rootY) return false;
+                
+                // Union by rank
+                if (this.rank[rootX] < this.rank[rootY]) {
+                    this.parent[rootX] = rootY;
+                } else if (this.rank[rootX] > this.rank[rootY]) {
+                    this.parent[rootY] = rootX;
+                } else {
+                    this.parent[rootY] = rootX;
+                    this.rank[rootX]++;
+                }
+                
+                return true;
+            }
+            
+            getComponents() {
+                const components = {};
+                for (let i = 0; i < this.parent.length; i++) {
+                    const root = this.find(i);
+                    if (!components[root]) {
+                        components[root] = [];
+                    }
+                    components[root].push(i);
+                }
+                return Object.values(components);
+            }
+        }
+        
+        /**
+         * Finds connected components in the activated edge subgraph
+         */
+        function findConnectedComponents() {
+            const uf = new UnionFind(L * L);
+            
+            // Process all active edges
+            edges.forEach(edge => {
+                if (edge.isActive) {
+                    const v1 = edge.y1 * L + edge.x1;
+                    const v2 = edge.y2 * L + edge.x2;
+                    uf.union(v1, v2);
+                }
+            });
+            
+            connectedComponents = uf.getComponents();
+            
+            // Calculate largest cluster fraction
+            const largestClusterSize = Math.max(...connectedComponents.map(c => c.length));
+            largestClusterFraction = largestClusterSize / (L * L);
+        }
+        
+        /**
+         * Updates activation statistics display
+         */
+        function updateActivationStats() {
+            if (!activationState) return;
+            
+            document.getElementById('activationStats').style.display = 'grid';
+            document.getElementById('activeEdges').textContent = activationState.activeCount;
+            document.getElementById('componentCount').textContent = connectedComponents.length;
+            document.getElementById('largestCluster').textContent = (largestClusterFraction * 100).toFixed(2) + '%';
+        }
+        
+        /**
+         * Generates a distinct color for each component
+         * Uses the globally selected palette
+         */
+        function getComponentColor(componentIndex, totalComponents) {
+            return getColorFromPalette(componentIndex, totalComponents, componentPalette);
+        }
+        
+        /**
+         * Gets color from specified palette
+         */
+        function getColorFromPalette(index, total, palette) {
+            const i = index % total;
+            
+            if (palette === 'vibrant') {
+                // Vibrant, high-contrast colors
+                const colors = [
+                    '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+                    '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
+                    '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000',
+                    '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'pastel') {
+                // Soft pastel colors
+                const hue = (i * 360 / total) % 360;
+                const saturation = 60 + (i % 3) * 5;
+                const lightness = 75 + (i % 2) * 5;
+                return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+                
+            } else if (palette === 'colorblind') {
+                // Colorblind-friendly palette (Wong 2011)
+                const colors = [
+                    '#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2',
+                    '#D55E00', '#CC79A7', '#000000', '#E69F00', '#56B4E9'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'rainbow') {
+                // Evenly distributed rainbow
+                const hue = (i * 360 / total) % 360;
+                return `hsl(${hue}, 85%, 55%)`;
+                
+            } else if (palette === 'warm') {
+                // Warm colors (reds, oranges, yellows)
+                const hue = 30 + (i * 60 / total) % 60;
+                const saturation = 70 + (i % 4) * 5;
+                const lightness = 50 + (i % 3) * 8;
+                return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+                
+            } else if (palette === 'cool') {
+                // Cool colors (blues, greens, purples)
+                const hue = 180 + (i * 180 / total) % 180;
+                const saturation = 65 + (i % 4) * 5;
+                const lightness = 50 + (i % 3) * 8;
+                return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+                
+            // ColorBrewer palettes from gnuplot-palettes
+            } else if (palette === 'set1') {
+                // ColorBrewer Set1 - 8 easy-to-name colors
+                const colors = [
+                    '#E41A1C', '#377EB8', '#4DAF4A', '#984EA3',
+                    '#FF7F00', '#FFFF33', '#A65628', '#F781BF'
+                ];
+                return colors[i % colors.length];
+                
+            // Matplotlib perceptually-uniform colormaps
+            } else if (palette === 'viridis') {
+                // Viridis - perceptually uniform, colorblind-friendly
+                const colors = [
+                    '#440154', '#482878', '#3e4989', '#31688e', '#26828e',
+                    '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde724'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'plasma') {
+                // Plasma - perceptually uniform, warm colors
+                const colors = [
+                    '#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786',
+                    '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'inferno') {
+                // Inferno - perceptually uniform, hot colors
+                const colors = [
+                    '#000004', '#1b0c41', '#4a0c6b', '#781c6d', '#a52c60',
+                    '#cf4446', '#ed6925', '#fb9b06', '#f7d03c', '#fcffa4'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'magma') {
+                // Magma - perceptually uniform, volcanic colors
+                const colors = [
+                    '#000004', '#180f3d', '#440f76', '#721f81', '#9e2f7f',
+                    '#cd4071', '#f1605d', '#fd9668', '#feca8d', '#fcfdbf'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'set2') {
+                // ColorBrewer Set2 - 8 medium-saturated colors
+                const colors = [
+                    '#66C2A5', '#FC8D62', '#8DA0CB', '#E78AC3',
+                    '#A6D854', '#FFD92F', '#E5C494', '#B3B3B3'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'set3') {
+                // ColorBrewer Set3 - 8 colors, medium saturation
+                const colors = [
+                    '#8DD3C7', '#FFFFB3', '#BEBADA', '#FB8072',
+                    '#80B1D3', '#FDB462', '#B3DE69', '#FCCDE5'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'paired') {
+                // ColorBrewer Paired - 8 colors in 4 pairs (light/dark)
+                const colors = [
+                    '#A6CEE3', '#1F78B4', '#B2DF8A', '#33A02C',
+                    '#FB9A99', '#E31A1C', '#FDBF6F', '#FF7F00'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'pastel1') {
+                // ColorBrewer Pastel1 - 8 pale colors
+                const colors = [
+                    '#FBB4AE', '#B3CDE3', '#CCEBC5', '#DECBE4',
+                    '#FED9A6', '#FFFFCC', '#E5D8BD', '#FDDAEC'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'pastel2') {
+                // ColorBrewer Pastel2 - 8 very pale colors
+                const colors = [
+                    '#B3E2CD', '#FDCDAC', '#CBD5E8', '#F4CAE4',
+                    '#E6F5C9', '#FFF2AE', '#F1E2CC', '#CCCCCC'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'dark2') {
+                // ColorBrewer Dark2 - 8 dark colors
+                const colors = [
+                    '#1B9E77', '#D95F02', '#7570B3', '#E7298A',
+                    '#66A61E', '#E6AB02', '#A6761D', '#666666'
+                ];
+                return colors[i % colors.length];
+                
+            } else if (palette === 'accent') {
+                // ColorBrewer Accent - 8 colors with varying saturation
+                const colors = [
+                    '#7FC97F', '#BEAED4', '#FDC086', '#FFFF99',
+                    '#386CB0', '#F0027F', '#BF5B17', '#666666'
+                ];
+                return colors[i % colors.length];
+                
+            } else {
+                // Default: original HSL distribution
+                const hue = (i * 360 / total) % 360;
+                const saturation = 70 + (i % 3) * 10;
+                const lightness = 50 + (i % 2) * 10;
+                return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            }
+        }
+        
+        /**
+         * Gets the component index for a given vertex
+         */
+        function getVertexComponent(x, y) {
+            const vertexIdx = y * L + x;
+            for (let i = 0; i < connectedComponents.length; i++) {
+                if (connectedComponents[i].includes(vertexIdx)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        
+        /**
+         * Draws the lattice on canvas
+         */
+        function drawLattice() {
+            const padding = 40;
+            const width = canvas.width - 2 * padding;
+            const height = canvas.height - 2 * padding;
+            const cellSize = Math.min(width, height) / (L - 1);
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw edges
+            edges.forEach(edge => {
+                const x1 = padding + edge.x1 * cellSize;
+                const y1 = padding + edge.y1 * cellSize;
+                const x2 = padding + edge.x2 * cellSize;
+                const y2 = padding + edge.y2 * cellSize;
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                
+                if (edge.isActive && highlightComponents && connectedComponents.length > 0) {
+                    // Highlight mode: color edges by their component
+                    const comp1 = getVertexComponent(edge.x1, edge.y1);
+                    const comp2 = getVertexComponent(edge.x2, edge.y2);
+                    
+                    if (comp1 === comp2 && comp1 !== -1) {
+                        ctx.lineWidth = 4;
+                        ctx.strokeStyle = getComponentColor(comp1, connectedComponents.length);
+                    } else {
+                        // Edge between different components (shouldn't happen with correct algorithm)
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = '#888';
+                    }
+                } else if (edge.isActive) {
+                    // Active edges are drawn thicker and brighter
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = edge.color === 'red' ? '#ff0000' : '#0066ff';
+                } else if (activationState !== null) {
+                    // Inactive edges are drawn in light grey
+                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = '#d3d3d3';
+                } else {
+                    // No activation simulated yet
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = edge.color === 'red' ? '#dc3545' : '#007bff';
+                }
+                
+                ctx.stroke();
+            });
+            
+            // Draw vertices
+            for (let i = 0; i < L; i++) {
+                for (let j = 0; j < L; j++) {
+                    const x = padding + j * cellSize;
+                    const y = padding + i * cellSize;
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3, 0, 2 * Math.PI);
+                    
+                    if (highlightComponents && connectedComponents.length > 0) {
+                        const compIdx = getVertexComponent(j, i);
+                        if (compIdx !== -1) {
+                            ctx.fillStyle = getComponentColor(compIdx, connectedComponents.length);
+                            ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                        } else {
+                            ctx.fillStyle = '#ccc';
+                        }
+                    } else {
+                        ctx.fillStyle = '#333';
+                    }
+                    
+                    ctx.fill();
+                }
+            }
+        }
+        
+        /**
+         * Updates statistics display
+         */
+        function updateStats() {
+            const totalEdges = edges.length;
+            const redCount = edges.filter(e => e.color === 'red').length;
+            const blueCount = edges.filter(e => e.color === 'blue').length;
+            
+            document.getElementById('totalEdges').textContent = totalEdges;
+            document.getElementById('redEdges').textContent = redCount;
+            document.getElementById('blueEdges').textContent = blueCount;
+            
+            // Update pattern info
+            let patternText = '';
+            if (pattern === 'alternating') {
+                patternText = 'Alternating: Independent rows/cols';
+            } else if (pattern === 'alternating-buggy') {
+                patternText = 'Chessboard: Globally correlated';
+            } else {
+                patternText = 'Random 50-50 split';
+            }
+            document.getElementById('patternInfo').textContent = patternText;
+        }
+        
+        /**
+         * Exports the current canvas view as a PDF file
+         * Creates a new canvas with metadata text added below the lattice
+         */
+        function exportToPDF() {
+            // Create a temporary canvas with extra space for metadata
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Set dimensions: original canvas + space for text
+            const padding = 40;
+            const textHeight = 120;
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height + textHeight;
+            
+            // Fill with white background
+            tempCtx.fillStyle = 'white';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Copy the original canvas
+            tempCtx.drawImage(canvas, 0, 0);
+            
+            // Add metadata text
+            tempCtx.fillStyle = '#333';
+            tempCtx.font = 'bold 16px Arial';
+            tempCtx.textAlign = 'center';
+            
+            let yPos = canvas.height + 30;
+            tempCtx.fillText(`Square Lattice Visualization - L = ${L}`, tempCanvas.width / 2, yPos);
+            
+            yPos += 25;
+            tempCtx.font = '14px Arial';
+            
+            // Get pattern display name
+            let patternDisplay = pattern;
+            if (pattern === 'alternating') patternDisplay = 'Alternating';
+            else if (pattern === 'alternating-buggy') patternDisplay = 'Chessboard';
+            else if (pattern === 'random') patternDisplay = 'Random';
+            
+            tempCtx.fillText(`Pattern: ${patternDisplay} | ` +
+                           `p₁ (red) = ${document.getElementById('p1').value} | ` +
+                           `p₂ (blue) = ${document.getElementById('p2').value}`, 
+                           tempCanvas.width / 2, yPos);
+            
+            if (activationState) {
+                yPos += 25;
+                let statsText = `Active Edges: ${activationState.activeCount}/${edges.length}`;
+                if (connectedComponents.length > 0) {
+                    statsText += ` | Connected Components: ${connectedComponents.length}`;
+                    statsText += ` | Largest Cluster: ${(largestClusterFraction * 100).toFixed(2)}%`;
+                }
+                tempCtx.fillText(statsText, tempCanvas.width / 2, yPos);
+            }
+            
+            // Convert canvas to image data URL
+            const imgData = tempCanvas.toDataURL('image/png');
+            
+            // Create a new window optimized for printing to PDF
+            const printWindow = window.open('', '_blank', 'width=900,height=900');
+            
+            if (!printWindow) {
+                alert('Please allow popups for this site to export PDF');
+                return;
+            }
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Lattice Export</title>
+                    <style>
+                        @page {
+                            size: A4;
+                            margin: 1cm;
+                        }
+                        body {
+                            margin: 0;
+                            padding: 0;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 100vh;
+                        }
+                        img {
+                            max-width: 100%;
+                            height: auto;
+                            display: block;
+                        }
+                        @media print {
+                            body {
+                                background: white;
+                            }
+                            img {
+                                page-break-inside: avoid;
+                            }
+                        }
+                        .no-print {
+                            text-align: center;
+                            padding: 20px;
+                            background: #f0f0f0;
+                            margin-bottom: 20px;
+                        }
+                        @media print {
+                            .no-print {
+                                display: none;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div>
+                        <div class="no-print">
+                            <h2>Lattice Visualization</h2>
+                            <p>Use File → Print (or Ctrl/Cmd+P) and select "Save as PDF" to download</p>
+                            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Print to PDF</button>
+                        </div>
+                        <img src="${imgData}" alt="Lattice Visualization" />
+                    </div>
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            
+            // Auto-trigger print dialog after a short delay
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 250);
+        }
+        
+        // Event listeners
+        document.getElementById('latticeSize').addEventListener('change', (e) => {
+            L = parseInt(e.target.value);
+            generateLattice();
+        });
+        
+        document.getElementById('p1').addEventListener('input', (e) => {
+            document.getElementById('p1-value').textContent = parseFloat(e.target.value).toFixed(2);
+        });
+        
+        document.getElementById('p2').addEventListener('input', (e) => {
+            document.getElementById('p2-value').textContent = parseFloat(e.target.value).toFixed(2);
+        });
+        
+        document.querySelectorAll('.pattern-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.pattern-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                pattern = e.target.dataset.pattern;
+                generateLattice();
+            });
+        });
+        
+        document.getElementById('generateBtn').addEventListener('click', generateLattice);
+        document.getElementById('activateBtn').addEventListener('click', simulateActivation);
+        document.getElementById('snapshotBtn').addEventListener('click', exportToPDF);
+        
+        document.getElementById('highlightComponents').addEventListener('change', (e) => {
+            highlightComponents = e.target.checked;
+            document.getElementById('componentStatus').textContent = highlightComponents ? 'On' : 'Off';
+            if (connectedComponents.length > 0) {
+                drawLattice();
+            }
+        });
+        
+        document.getElementById('paletteSelect').addEventListener('change', (e) => {
+            componentPalette = e.target.value;
+            if (highlightComponents && connectedComponents.length > 0) {
+                drawLattice();
+            }
+        });
+        
+        // Initialize
+        generateLattice();
+    </script>
+</body>
+</html>
